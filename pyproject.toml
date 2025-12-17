@@ -1,0 +1,43 @@
+[project]
+name = "pretix-FIRA-plugin"
+dynamic = ["version"]
+description = "A pretix plugin that integrates FIRA v1.0"
+readme = "README.rst"
+license = {text = "pretix Enterprise"}
+keywords = ["pretix"]
+authors = [
+    {name = "Pavle Ergović", email = "pavle.ergovic@kset.org"},
+]
+maintainers = [
+    {name = "Pavle Ergović", email = "pavle.ergovic@kset.org"},
+]
+
+dependencies = [
+    "python-decouple"
+]
+
+[project.entry-points."pretix.plugin"]
+pretix_FIRA_plugin = "pretix_FIRA_plugin:PretixPluginMeta"
+
+[project.entry-points."distutils.commands"]
+build = "pretix_plugin_build.build:CustomBuild"
+
+[build-system]
+requires = [
+    "setuptools",
+    "pretix-plugin-build",
+]
+
+[project.urls]
+homepage = "GitHub repository URL"
+repository = "GitHub repository URL"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "pretix_FIRA_plugin.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["pretix*"]
+namespaces = false

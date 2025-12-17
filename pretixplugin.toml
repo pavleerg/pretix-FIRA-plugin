@@ -1,0 +1,5 @@
+[plugin]
+package = "pretix-FIRA-plugin"
+modules = [ "pretix_FIRA_plugin" ]
+marketplace_name = "FIRA-plugin"
+
