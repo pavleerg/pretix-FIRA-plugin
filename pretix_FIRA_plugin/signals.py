@@ -7,7 +7,7 @@ from pretix.base.signals import order_paid
 from pretix.base.models import LogEntry
 import requests
 import json
-from decouple import config
+from decouple import config 
 
 @receiver(order_paid)
 def handle_order_creation(sender, order, **kwargs):
@@ -60,13 +60,20 @@ def handle_order_creation(sender, order, **kwargs):
         'Content-Type': 'application/json'
     }
 
-    # Format datetime for FIRA API (ISO 8601 with Z)
-    created_at = order.datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
+    # Format datetime for FIRA API (LocalDateTime format without timezone)
+    # Convert to event's timezone and format without timezone suffix
+    event_tz = order.event.timezone
+    local_datetime = order.datetime.astimezone(event_tz)
+    created_at = local_datetime.strftime('%Y-%m-%dT%H:%M:%S')
 
-    # Minimal billing address required by FIRA API
+    # Billing address for FIRA API
+    # Include email if available - FIRA will send email invoice if configured
     billing_address = {
         "country": "HR"
     }
+
+    if order.email:
+        billing_address["email"] = order.email
 
     # Calculate invoice totals (prices are tax-included)
     # Formula: netto = brutto / (1 + taxRate), tax = brutto - netto
