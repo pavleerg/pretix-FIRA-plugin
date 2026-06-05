@@ -28,13 +28,28 @@ def handle_order_creation(sender, order, **kwargs):
     from collections import defaultdict
     items_grouped = defaultdict(lambda: {"quantity": 0, "price": 0, "name": ""})
 
+    has_voucher = False
     for position in order.positions.all():
+        # skip orders with vouchers
+        print(
+            f"[FIRA] Order {order.code} position {position.pk}: "
+            f"voucher={position.voucher} discount={position.discount} "
+            f"price={position.price}"
+        )
+        if position.voucher is not None:
+            has_voucher = True
+
         fira_id = position.item.meta_data.get('FIRAID')
         if fira_id and fira_id != '-1':
             items_grouped[fira_id]["quantity"] += 1
             if items_grouped[fira_id]["price"] == 0:
                 items_grouped[fira_id]["price"] = float(position.price)
                 items_grouped[fira_id]["name"] = str(position.item.internal_name or position.item.name)
+
+    # If any position used a voucher, do not send to FIRA for now.
+    if has_voucher:
+        print(f"[FIRA] Order {order.code} has a voucher applied. Skipping FIRA invoice creation.")
+        return
 
     # Build line items for FIRA API
     lineItems = [

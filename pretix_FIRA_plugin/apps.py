@@ -16,7 +16,7 @@ class PluginApp(PluginConfig):
     class PretixPluginMeta:
         name = gettext_lazy("FIRAPlugin")
         author = "Pavle Ergović"
-        description = gettext_lazy("A pretix plugin that integrates FIRA v1.0")
+        description = gettext_lazy("A pretix plugin that integrates FIRA v1.1")
         visible = True
         version = __version__
         category = "INTEGRATION"
