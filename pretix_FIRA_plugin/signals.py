@@ -29,6 +29,7 @@ def handle_order_creation(sender, order, **kwargs):
     items_grouped = defaultdict(lambda: {"quantity": 0, "price": 0, "name": ""})
 
     has_voucher = False
+    has_bundle = False
     for position in order.positions.all():
         # skip orders with vouchers
         print(
@@ -39,6 +40,11 @@ def handle_order_creation(sender, order, **kwargs):
         if position.voucher is not None:
             has_voucher = True
 
+        # If any position is bundled inside a bundle product, do not send the
+        # whole order to FIRA.
+        if position.is_bundled:
+            has_bundle = True
+
         fira_id = position.item.meta_data.get('FIRAID')
         if fira_id and fira_id != '-1':
             items_grouped[fira_id]["quantity"] += 1
@@ -48,7 +54,20 @@ def handle_order_creation(sender, order, **kwargs):
 
     # If any position used a voucher, do not send to FIRA for now.
     if has_voucher:
+        LogEntry.objects.create(
+            content_object=order,
+            action_type="FIRA invoice NOT created - order contains a voucher",
+        )
         print(f"[FIRA] Order {order.code} has a voucher applied. Skipping FIRA invoice creation.")
+        return
+
+    # If the order contains a bundle, do not send anything to FIRA.
+    if has_bundle:
+        LogEntry.objects.create(
+            content_object=order,
+            action_type="FIRA invoice NOT created - order contains a bundle",
+        )
+        print(f"[FIRA] Order {order.code} contains a bundle. Skipping FIRA invoice creation.")
         return
 
     # Build line items for FIRA API
@@ -65,6 +84,10 @@ def handle_order_creation(sender, order, **kwargs):
     ]
 
     if not lineItems:
+        LogEntry.objects.create(
+            content_object=order,
+            action_type="FIRA invoice NOT created - no items with a valid FIRAID",
+        )
         print(f"No valid items with FIRAID for order {order.code}. Skipping FIRA invoice creation.")
         return
 
